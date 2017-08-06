@@ -274,7 +274,6 @@ public class Http2MultiplexCodec extends Http2FrameCodec {
                 // ignore for now
                 break;
         }
-
     }
 
     @Override
