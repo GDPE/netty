@@ -16,15 +16,19 @@
 
 package io.netty.handler.codec.http2;
 
+import io.netty.util.internal.ObjectUtil;
+import io.netty.util.internal.UnstableApi;
+
 /**
  * The default {@link Http2SettingsFrame} implementation.
  */
+@UnstableApi
 public class DefaultHttp2SettingsFrame implements Http2SettingsFrame {
 
     private final Http2Settings settings;
 
     public DefaultHttp2SettingsFrame(Http2Settings settings) {
-        this.settings = settings;
+        this.settings = ObjectUtil.checkNotNull(settings, "settings");
     }
 
     @Override

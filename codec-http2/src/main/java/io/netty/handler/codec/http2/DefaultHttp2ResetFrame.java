@@ -34,7 +34,7 @@ public final class DefaultHttp2ResetFrame extends AbstractHttp2StreamFrame imple
      * @param error the non-{@code null} reason for reset
      */
     public DefaultHttp2ResetFrame(Http2Error error) {
-        this.errorCode = checkNotNull(error, "error").code();
+        errorCode = checkNotNull(error, "error").code();
     }
 
     /**

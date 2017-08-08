@@ -18,7 +18,9 @@ package io.netty.handler.codec.http2;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.DefaultByteBufHolder;
 import io.netty.buffer.Unpooled;
+import io.netty.util.internal.UnstableApi;
 
+@UnstableApi
 public final class DefaultHttp2UnkownFrame extends DefaultByteBufHolder implements Http2UnknownFrame {
     private final byte frameType;
     private final Http2Flags flags;
