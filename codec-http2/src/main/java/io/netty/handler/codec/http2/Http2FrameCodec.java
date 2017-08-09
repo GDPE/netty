@@ -148,8 +148,7 @@ public class Http2FrameCodec extends Http2ConnectionHandler {
 
     private final PropertyKey streamKey;
 
-    // Used to adjust flow control window on channel active. Set to null afterwards.
-    private Integer initialLocalConnectionWindow;
+    private final Integer initialFlowControlWindowSize;
 
     private ChannelHandlerContext ctx;
 
@@ -172,7 +171,7 @@ public class Http2FrameCodec extends Http2ConnectionHandler {
         connection().addListener(new ConnectionListener());
         connection().remote().flowController().listener(new Http2RemoteFlowControllerListener());
         streamKey = connection().newKey();
-        initialLocalConnectionWindow = initialSettings.initialWindowSize();
+        initialFlowControlWindowSize = initialSettings.initialWindowSize();
         gracefulShutdownTimeoutMillis(gracefulShutdownTimeoutMillis);
     }
 
@@ -184,7 +183,7 @@ public class Http2FrameCodec extends Http2ConnectionHandler {
         connection().addListener(new ConnectionListener());
         connection().remote().flowController().listener(new Http2RemoteFlowControllerListener());
         streamKey = connection().newKey();
-        initialLocalConnectionWindow = initialSettings.initialWindowSize();
+        initialFlowControlWindowSize = initialSettings.initialWindowSize();
     }
 
     /**
@@ -225,36 +224,37 @@ public class Http2FrameCodec extends Http2ConnectionHandler {
         });
     }
 
-    /**
-     * Load any dependencies.
-     */
     @Override
     public final void handlerAdded(ChannelHandlerContext ctx) throws Exception {
         this.ctx = ctx;
         super.handlerAdded(ctx);
         handlerAdded0(ctx);
-        sendInitialConnectionWindow(ctx);
+        // Must be after Http2ConnectionHandler does its initialization in handlerAdded above.
+        // The server will not send a connection preface so we are good to send a window update.
+        Http2Connection connection = connection();
+        if (connection.isServer()) {
+            tryExpandConnectionFlowControlWindow(connection);
+        }
+    }
+
+    private void tryExpandConnectionFlowControlWindow(Http2Connection connection) throws Http2Exception {
+        if (initialFlowControlWindowSize != null) {
+            // The window size int the settings explicitly excludes the connection window. So we manually manipulate the
+            // connection window to accommodate more concurrent data per connection.
+            Http2Stream connectionStream = connection.connectionStream();
+            Http2LocalFlowController localFlowController = connection.local().flowController();
+            final int delta = initialFlowControlWindowSize - localFlowController.initialWindowSize(connectionStream);
+            // Only increase the connection window, don't decrease it.
+            if (delta > 0) {
+                // Double the delta just so a single stream can't exhaust the connection window.
+                localFlowController.incrementWindowSize(connectionStream, Math.max(delta << 1, delta));
+                flush(ctx);
+            }
+        }
     }
 
     void handlerAdded0(@SuppressWarnings("unsed") ChannelHandlerContext ctx) throws Exception {
         // sub-class can override this for extra steps that needs to be done when the handler is added.
-    }
-
-    @Override
-    public final void channelActive(ChannelHandlerContext ctx) throws Exception {
-        super.channelActive(ctx);
-        sendInitialConnectionWindow(ctx);
-    }
-
-    private void sendInitialConnectionWindow(ChannelHandlerContext ctx) throws Http2Exception {
-        if (ctx.channel().isActive() && initialLocalConnectionWindow != null) {
-            Http2Stream connectionStream = connection().connectionStream();
-            int currentSize = connection().local().flowController().windowSize(connectionStream);
-            int delta = initialLocalConnectionWindow - currentSize;
-            decoder().flowController().incrementWindowSize(connectionStream, delta);
-            initialLocalConnectionWindow = null;
-            ctx.flush();
-        }
     }
 
     /**
@@ -263,25 +263,27 @@ public class Http2FrameCodec extends Http2ConnectionHandler {
      */
     @Override
     public final void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-        if (!(evt instanceof UpgradeEvent)) {
+        if (evt instanceof Http2ConnectionPrefaceWrittenEvent) {
+            // The user event implies that we are on the client.
+            tryExpandConnectionFlowControlWindow(connection());
+        } else if (evt instanceof UpgradeEvent) {
+            UpgradeEvent upgrade = (UpgradeEvent) evt;
+            try {
+                onUpgradeEvent(ctx, upgrade.retain());
+                Http2Stream stream = connection().stream(HTTP_UPGRADE_STREAM_ID);
+                // TODO: improve handler/stream lifecycle so that stream isn't active before handler added.
+                // The stream was already made active, but ctx may have been null so it wasn't initialized.
+                // https://github.com/netty/netty/issues/4942
+                new ConnectionListener().onStreamActive(stream);
+                upgrade.upgradeRequest().headers().setInt(
+                        HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text(), HTTP_UPGRADE_STREAM_ID);
+                new InboundHttpToHttp2Adapter(connection(), decoder().frameListener())
+                        .channelRead(ctx, upgrade.upgradeRequest().retain());
+            } finally {
+                upgrade.release();
+            }
+        } else {
             super.userEventTriggered(ctx, evt);
-            return;
-        }
-
-        UpgradeEvent upgrade = (UpgradeEvent) evt;
-        try {
-            onUpgradeEvent(ctx, upgrade.retain());
-            Http2Stream stream = connection().stream(HTTP_UPGRADE_STREAM_ID);
-            // TODO: improve handler/stream lifecycle so that stream isn't active before handler added.
-            // The stream was already made active, but ctx may have been null so it wasn't initialized.
-            // https://github.com/netty/netty/issues/4942
-            new ConnectionListener().onStreamActive(stream);
-            upgrade.upgradeRequest().headers().setInt(
-                    HttpConversionUtil.ExtensionHeaderNames.STREAM_ID.text(), HTTP_UPGRADE_STREAM_ID);
-            new InboundHttpToHttp2Adapter(connection(), decoder().frameListener())
-                    .channelRead(ctx, upgrade.upgradeRequest().retain());
-        } finally {
-            upgrade.release();
         }
     }
 
