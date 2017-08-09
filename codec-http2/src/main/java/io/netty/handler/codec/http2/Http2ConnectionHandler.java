@@ -185,7 +185,7 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
     }
 
     @Override
-    public void flush(ChannelHandlerContext ctx)  {
+    public void flush(ChannelHandlerContext ctx) {
         try {
             // Trigger pending writes in the remote flow controller.
             encoder.flowController().writePendingBytes();

@@ -16,17 +16,20 @@
 
 package io.netty.handler.codec.http2;
 
+import io.netty.util.internal.UnstableApi;
+
 /**
  * A HTTP/2 exception for a specific {@link Http2FrameStream}.
  */
-public class Http2FrameStreamException extends Exception {
+@UnstableApi
+public final class Http2FrameStreamException extends Exception {
 
     private static final long serialVersionUID = -4407186173493887044L;
 
     private final Http2Error error;
     private final Http2FrameStream stream;
 
-    public <T> Http2FrameStreamException(Http2FrameStream stream, Http2Error error, Throwable cause) {
+    public Http2FrameStreamException(Http2FrameStream stream, Http2Error error, Throwable cause) {
         super(cause.getMessage(), cause);
         this.stream = stream;
         this.error = error;

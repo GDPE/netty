@@ -15,11 +15,11 @@
  */
 package io.netty.handler.codec.http2;
 
+import io.netty.util.internal.StringUtil;
 import io.netty.util.internal.UnstableApi;
 
 import static io.netty.handler.codec.http2.Http2CodecUtil.verifyPadding;
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
-import static io.netty.util.internal.ObjectUtil.checkPositive;
 
 /**
  * The default {@link Http2HeadersFrame} implementation.
@@ -91,8 +91,8 @@ public final class DefaultHttp2HeadersFrame extends AbstractHttp2StreamFrame imp
 
     @Override
     public String toString() {
-        return "DefaultHttp2HeadersFrame(stream=" + stream() + ", headers=" + headers
-               + ", endStream=" + endStream + ", padding=" + padding + ")";
+        return StringUtil.simpleClassName(this) + "(stream=" + stream() + ", headers=" + headers
+               + ", endStream=" + endStream + ", padding=" + padding + ')';
     }
 
     @Override

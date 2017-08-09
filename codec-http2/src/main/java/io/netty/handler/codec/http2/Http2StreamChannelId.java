@@ -22,10 +22,10 @@ import io.netty.channel.ChannelId;
  */
 final class Http2StreamChannelId implements ChannelId {
 
-    private final long id;
+    private final int id;
     private final ChannelId parentId;
 
-    Http2StreamChannelId(ChannelId parentId, long id) {
+    Http2StreamChannelId(ChannelId parentId, int id) {
         this.parentId = parentId;
         this.id = id;
     }

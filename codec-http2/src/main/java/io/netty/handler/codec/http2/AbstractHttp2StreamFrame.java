@@ -23,7 +23,7 @@ import io.netty.util.internal.UnstableApi;
 @UnstableApi
 public abstract class AbstractHttp2StreamFrame implements Http2StreamFrame {
 
-    private volatile Http2FrameStream stream;
+    private Http2FrameStream stream;
 
     @Override
     public AbstractHttp2StreamFrame stream(Http2FrameStream stream) {
@@ -50,6 +50,10 @@ public abstract class AbstractHttp2StreamFrame implements Http2StreamFrame {
 
     @Override
     public int hashCode() {
+        Http2FrameStream stream = this.stream;
+        if (stream == null) {
+            return super.hashCode();
+        }
         return stream.hashCode();
     }
 }

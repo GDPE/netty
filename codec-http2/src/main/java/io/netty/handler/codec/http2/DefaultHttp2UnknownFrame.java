@@ -18,19 +18,20 @@ package io.netty.handler.codec.http2;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.DefaultByteBufHolder;
 import io.netty.buffer.Unpooled;
+import io.netty.util.internal.StringUtil;
 import io.netty.util.internal.UnstableApi;
 
 @UnstableApi
-public final class DefaultHttp2UnkownFrame extends DefaultByteBufHolder implements Http2UnknownFrame {
+public final class DefaultHttp2UnknownFrame extends DefaultByteBufHolder implements Http2UnknownFrame {
     private final byte frameType;
     private final Http2Flags flags;
     private Http2FrameStream stream;
 
-    public DefaultHttp2UnkownFrame(byte frameType, Http2Flags flags) {
+    public DefaultHttp2UnknownFrame(byte frameType, Http2Flags flags) {
         this(frameType, flags, Unpooled.EMPTY_BUFFER);
     }
 
-    public DefaultHttp2UnkownFrame(byte frameType, Http2Flags flags, ByteBuf data) {
+    public DefaultHttp2UnknownFrame(byte frameType, Http2Flags flags, ByteBuf data) {
         super(data);
         this.frameType = frameType;
         this.flags = flags;
@@ -42,7 +43,7 @@ public final class DefaultHttp2UnkownFrame extends DefaultByteBufHolder implemen
     }
 
     @Override
-    public DefaultHttp2UnkownFrame stream(Http2FrameStream stream) {
+    public DefaultHttp2UnknownFrame stream(Http2FrameStream stream) {
         this.stream = stream;
         return this;
     }
@@ -63,61 +64,61 @@ public final class DefaultHttp2UnkownFrame extends DefaultByteBufHolder implemen
     }
 
     @Override
-    public DefaultHttp2UnkownFrame copy() {
+    public DefaultHttp2UnknownFrame copy() {
         return replace(content().copy());
     }
 
     @Override
-    public DefaultHttp2UnkownFrame duplicate() {
+    public DefaultHttp2UnknownFrame duplicate() {
         return replace(content().duplicate());
     }
 
     @Override
-    public DefaultHttp2UnkownFrame retainedDuplicate() {
+    public DefaultHttp2UnknownFrame retainedDuplicate() {
         return replace(content().retainedDuplicate());
     }
 
     @Override
-    public DefaultHttp2UnkownFrame replace(ByteBuf content) {
-        return new DefaultHttp2UnkownFrame(frameType, flags, content).stream(stream());
+    public DefaultHttp2UnknownFrame replace(ByteBuf content) {
+        return new DefaultHttp2UnknownFrame(frameType, flags, content).stream(stream());
     }
 
     @Override
-    public DefaultHttp2UnkownFrame retain() {
+    public DefaultHttp2UnknownFrame retain() {
         super.retain();
         return this;
     }
 
     @Override
-    public DefaultHttp2UnkownFrame retain(int increment) {
+    public DefaultHttp2UnknownFrame retain(int increment) {
         super.retain(increment);
         return this;
     }
 
     @Override
     public String toString() {
-        return "DefaultHttp2UnkownFrame(frameType=" + frameType() + ", stream=" + stream() + ", flags=" + flags() +
-                ", content=" + contentToString() + ")";
+        return StringUtil.simpleClassName(this) + "(frameType=" + frameType() + ", stream=" + stream() +
+                ", flags=" + flags() + ", content=" + contentToString() + ')';
     }
 
     @Override
-    public DefaultHttp2UnkownFrame touch() {
+    public DefaultHttp2UnknownFrame touch() {
         super.touch();
         return this;
     }
 
     @Override
-    public DefaultHttp2UnkownFrame touch(Object hint) {
+    public DefaultHttp2UnknownFrame touch(Object hint) {
         super.touch(hint);
         return this;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (!(o instanceof DefaultHttp2UnkownFrame)) {
+        if (!(o instanceof DefaultHttp2UnknownFrame)) {
             return false;
         }
-        DefaultHttp2UnkownFrame other = (DefaultHttp2UnkownFrame) o;
+        DefaultHttp2UnknownFrame other = (DefaultHttp2UnknownFrame) o;
         return super.equals(other) && flags().equals(other.flags())
                 && frameType() == other.frameType() && (stream() == null && other.stream() == null) ||
                 stream().equals(other.stream());

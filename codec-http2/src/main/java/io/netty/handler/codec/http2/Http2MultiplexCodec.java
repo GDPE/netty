@@ -141,8 +141,6 @@ public class Http2MultiplexCodec extends Http2FrameCodec {
 
     private static final class Http2StreamChannelRecvByteBufAllocator extends DefaultMaxMessagesRecvByteBufAllocator {
 
-        static final Http2StreamChannelRecvByteBufAllocator INSTANCE = new Http2StreamChannelRecvByteBufAllocator();
-
         @Override
         public MaxMessageHandle newHandle() {
             return new MaxMessageHandle() {
@@ -158,7 +156,7 @@ public class Http2MultiplexCodec extends Http2FrameCodec {
 
     private int initialOutboundStreamWindow = Http2CodecUtil.DEFAULT_WINDOW_SIZE;
     private boolean flushNeeded;
-    private long idCount;
+    private int idCount;
 
     // Linked-List for DefaultHttp2StreamChannel instances that need to be processed by channelReadComplete(...)
     private DefaultHttp2StreamChannel head;
@@ -195,8 +193,8 @@ public class Http2MultiplexCodec extends Http2FrameCodec {
         // Handle any errors that occurred on the local thread while registering. Even though
         // failures can happen after this point, they will be handled by the channel by closing the
         // childChannel.
-        DefaultHttp2StreamChannel childChannel = (DefaultHttp2StreamChannel) future.channel();
         if (!future.isSuccess()) {
+            Channel childChannel = future.channel();
             if (childChannel.isRegistered()) {
                 childChannel.close();
             } else {
@@ -217,6 +215,7 @@ public class Http2MultiplexCodec extends Http2FrameCodec {
     public final void handlerRemoved0(ChannelHandlerContext ctx) throws Exception {
         super.handlerRemoved0(ctx);
 
+        // Unlink the linked list to guard against GC nepotism.
         DefaultHttp2StreamChannel ch = head;
         while (ch != null) {
             DefaultHttp2StreamChannel curr = ch;
@@ -295,10 +294,6 @@ public class Http2MultiplexCodec extends Http2FrameCodec {
         Http2FrameStream stream = cause.stream();
         DefaultHttp2StreamChannel childChannel = ((Http2MultiplexCodecStream) stream).channel;
 
-        if (childChannel == null)  {
-            // TODO: Should we log this ?
-            return;
-        }
         try {
             childChannel.pipeline().fireExceptionCaught(cause.getCause());
         } finally {
@@ -899,12 +894,10 @@ public class Http2MultiplexCodec extends Http2FrameCodec {
 
                 do {
                     Object m = inboundBuffer.poll();
-                    if (m == null) {
-                        if (closePending) {
-                            pipeline().fireChannelReadComplete();
-                            unsafe.closeForcibly();
-                            return;
-                        }
+                    if (m == null && closePending) {
+                        pipeline().fireChannelReadComplete();
+                        unsafe.closeForcibly();
+                        return;
                     }
                     doRead0((Http2Frame) m, allocHandle);
                 } while (allocHandle.continueReading());
@@ -1074,7 +1067,7 @@ public class Http2MultiplexCodec extends Http2FrameCodec {
 
             Http2StreamChannelConfig(Channel channel) {
                 super(channel);
-                setRecvByteBufAllocator(Http2StreamChannelRecvByteBufAllocator.INSTANCE);
+                setRecvByteBufAllocator(new Http2StreamChannelRecvByteBufAllocator());
             }
 
             @Override

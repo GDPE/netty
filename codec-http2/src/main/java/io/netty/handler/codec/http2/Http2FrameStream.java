@@ -37,7 +37,7 @@ public interface Http2FrameStream {
 
         @Override
         public State state() {
-            throw new UnsupportedOperationException();
+            return State.IDLE;
         }
     };
 

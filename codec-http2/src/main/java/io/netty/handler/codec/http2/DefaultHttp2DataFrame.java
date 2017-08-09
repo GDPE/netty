@@ -18,6 +18,7 @@ package io.netty.handler.codec.http2;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.IllegalReferenceCountException;
+import io.netty.util.internal.StringUtil;
 import io.netty.util.internal.UnstableApi;
 
 import static io.netty.handler.codec.http2.Http2CodecUtil.verifyPadding;
@@ -158,8 +159,8 @@ public final class DefaultHttp2DataFrame extends AbstractHttp2StreamFrame implem
 
     @Override
     public String toString() {
-        return "DefaultHttp2DataFrame(stream=" + stream() + ", content=" + content
-               + ", endStream=" + endStream + ", padding=" + padding + ")";
+        return StringUtil.simpleClassName(this) + "(stream=" + stream() + ", content=" + content
+               + ", endStream=" + endStream + ", padding=" + padding + ')';
     }
 
     @Override
