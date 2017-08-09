@@ -386,7 +386,8 @@ public class Http2MultiplexCodec extends Http2FrameCodec {
     }
 
     // Allow to override for testing
-    void onBytesConsumed(ChannelHandlerContext ctx, Http2FrameStream stream, int bytes) throws Http2Exception {
+    void onBytesConsumed(@SuppressWarnings("unused") ChannelHandlerContext ctx,
+                         Http2FrameStream stream, int bytes) throws Http2Exception {
         consumeBytes(stream.id(), bytes);
     }
 
@@ -913,9 +914,7 @@ public class Http2MultiplexCodec extends Http2FrameCodec {
             @SuppressWarnings("deprecation")
             void doRead0(Http2Frame frame, RecvByteBufAllocator.Handle allocHandle) {
                 int numBytesToBeConsumed = 0;
-                if (frame instanceof Http2HeadersFrame) {
-                    allocHandle.lastBytesRead(ARBITRARY_MESSAGE_SIZE);
-                } else if (frame instanceof Http2DataFrame) {
+                if (frame instanceof Http2DataFrame) {
                     numBytesToBeConsumed = ((Http2DataFrame) frame).flowControlledBytes();
                     allocHandle.lastBytesRead(numBytesToBeConsumed);
                 } else {

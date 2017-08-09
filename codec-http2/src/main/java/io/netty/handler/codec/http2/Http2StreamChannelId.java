@@ -46,7 +46,7 @@ final class Http2StreamChannelId implements ChannelId {
             Http2StreamChannelId otherId = (Http2StreamChannelId) o;
             int res = parentId.compareTo(otherId.parentId);
             if (res == 0) {
-                return (int) (id - otherId.id);
+                return id - otherId.id;
             } else {
                 return res;
             }

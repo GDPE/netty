@@ -94,7 +94,6 @@ public class Http2ConnectionHandler extends ByteToMessageDecoder implements Http
                     Http2Settings initialSettings) {
         this.initialSettings = checkNotNull(initialSettings, "initialSettings");
 
-        // TODO(scott): configure maxReservedStreams when API is more finalized.
         Http2Connection connection = new DefaultHttp2Connection(server);
 
         Long maxHeaderListSize = initialSettings.maxHeaderListSize();
